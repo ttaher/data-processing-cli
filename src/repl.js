@@ -1,12 +1,25 @@
 const readline = require('node:readline');
 
-const { navigationCommands } = require('./navigation');
-const { parseInput } = require('./utils/argParser');
+const { handleNavigationCommand } = require('./navigation');
+const { invalidInputError, parseInput } = require('./utils/argParser');
 const { handleCountCommand } = require('./commands/count');
-
+const { handleCsvToJsonCommand } = require('./commands/csvToJson');
+const { handleDecryptCommand } = require('./commands/decrypt');
+const { handleEncryptCommand } = require('./commands/encrypt');
+const { handleHashCommand } = require('./commands/hash');
+const { handleHashCompareCommand } = require('./commands/hashCompare');
+const { handleJsonToCsvCommand } = require('./commands/jsonToCsv');
+const { handleLogStatsCommand } = require('./commands/logStats');
 
 const commandHandlers = {
-  'count': handleCountCommand
+  'count': handleCountCommand,
+  'csv-to-json': handleCsvToJsonCommand,
+  'decrypt': handleDecryptCommand,
+  'encrypt': handleEncryptCommand,
+  'hash': handleHashCommand,
+  'hash-compare': handleHashCompareCommand,
+  'json-to-csv': handleJsonToCsvCommand,
+  'log-stats': handleLogStatsCommand,
 };
 
 function createPrompt() {
@@ -19,10 +32,17 @@ function printCurrentDirectory(state) {
 
 async function dispatchCommand(state, command, args) {
   if (['up', 'cd', 'ls'].includes(command)) {
-    await navigationCommands(state, command, args);
+    await handleNavigationCommand(state, command, args);
     return;
   }
 
+  const handler = commandHandlers[command];
+
+  if (!handler) {
+    throw invalidInputError();
+  }
+
+  await handler(state, args);
 }
 
 function repl(state) {
@@ -48,37 +68,35 @@ function repl(state) {
   rl.prompt();
 
   rl.on('line', (line) => {
-    console.log('Received input:', line);
-    commandQueue = commandQueue.then(async () => {
-      console.log('Processing command:', line);
-      if (exitRequested) {
-        console.log('Exit already requested, ignoring input');
-        return;
-      }
-
-      const [command, ...args] = parseInput(line);
-      console.log('Parsed command:', { command, args });
-      if (!command) {
-        return;
-      }
-
-      if (command === '.exit') {
-        exitRequested = true;
-        rl.close();
-        return;
-      }
-
-      try {
-        await dispatchCommand(state, command, args);
-        printCurrentDirectory(state);
-      } catch (error) {
-        if (error && error.code === 'INVALID_INPUT') {
-          console.log('Invalid input');
-        } else {
-          console.log('Operation failed');
+    commandQueue = commandQueue
+      .then(async () => {
+        if (exitRequested) {
+          return;
         }
-      }
-    })
+
+        const [command, ...args] = parseInput(line);
+
+        if (!command) {
+          return;
+        }
+
+        if (command === '.exit') {
+          exitRequested = true;
+          rl.close();
+          return;
+        }
+
+        try {
+          await dispatchCommand(state, command, args);
+          printCurrentDirectory(state);
+        } catch (error) {
+          if (error && error.code === 'INVALID_INPUT') {
+            console.log('Invalid input');
+          } else {
+            console.log('Operation failed');
+          }
+        }
+      })
       .catch(() => {
         console.log('Operation failed');
       })
@@ -106,5 +124,7 @@ function repl(state) {
 }
 
 module.exports = {
-  repl
+  dispatchCommand,
+  printCurrentDirectory,
+  repl,
 };

@@ -5,8 +5,16 @@ const path = require('node:path');
 const { invalidInputError, operationFailedError } = require('./utils/argParser');
 const { resolvePath } = require('./utils/pathResolver');
 
+function ensureNoExtraArgs(args) {
+  if (args.length !== 0) {
+    throw invalidInputError();
+  }
+}
+
 async function up(state, args) {
-  state.currentDirectory = path.dirname(state.currentDirectory);
+  ensureNoExtraArgs(args);
+  const nextDirectory = path.dirname(state.currentDirectory);
+  state.currentDirectory = nextDirectory;
 }
 
 async function cd(state, args) {
@@ -33,6 +41,7 @@ async function cd(state, args) {
   }
 }
 async function ls(state, args) {
+  ensureNoExtraArgs(args);
 
   try {
     const entries = await fs.readdir(state.currentDirectory, { withFileTypes: true });
@@ -45,7 +54,7 @@ async function ls(state, args) {
   }
 }
 
-async function navigationCommands(state, command, args) {
+async function handleNavigationCommand(state, command, args) {
   if (command === 'up') {
     await up(state, args);
     return;
@@ -62,5 +71,8 @@ async function navigationCommands(state, command, args) {
 }
 
 module.exports = {
-  navigationCommands
+  cd,
+  handleNavigationCommand,
+  ls,
+  up,
 };
