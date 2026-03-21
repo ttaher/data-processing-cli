@@ -2,6 +2,12 @@ const readline = require('node:readline');
 
 const { navigationCommands } = require('./navigation');
 const { parseInput } = require('./utils/argParser');
+const { handleCountCommand } = require('./commands/count');
+
+
+const commandHandlers = {
+  'count': handleCountCommand
+};
 
 function createPrompt() {
   return '> ';
