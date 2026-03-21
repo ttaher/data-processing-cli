@@ -1,0 +1,24 @@
+{
+  "name": "data-processing-cli",
+  "version": "1.0.0",
+  "description": "Interactive CLI.",
+  "main": "src/main.js",
+  "bin": {
+    "data-processing-cli": "./src/main.js"
+  },
+  "type": "commonjs",
+  "scripts": {
+    "start": "node ./src/main.js",
+    "cli": "node ./src/main.js",
+    "generate-logs": "node ./scripts/generate-logs.js"
+  },
+  "keywords": [
+    "cli",
+    "data-processing",
+    "repl"
+  ],
+  "engines": {
+    "node": ">=24.10.0 <25"
+  },
+  "license": "ISC"
+}
